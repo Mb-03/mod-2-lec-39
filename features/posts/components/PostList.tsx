@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useInfinityPosts } from "../hook/useInfinityPosts";
 import { Loader } from "@/features/shared/ui/Loader";
+import { useInfinityPosts } from "../hook/useInfinityPosts";
 
 const PostList = () => {
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage, status } =
@@ -11,8 +11,10 @@ const PostList = () => {
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (loadMoreRef.current || !hasNextPage) return;
+    // თუ ელემენტი არ არსებობს ან გვერდები აღარ გვაქვს
+    if (!loadMoreRef.current || !hasNextPage) return;
 
+    // დავამატოთ დამკვირვებელი
     const observer = new IntersectionObserver(
       (entries) => {
         const entry = entries[0];
@@ -21,32 +23,37 @@ const PostList = () => {
           fetchNextPage();
         }
       },
-      { root: null, rootMargin: "100px", threshold: 0 }
+      {
+        root: null, // viewport
+        rootMargin: "100px", // 100px-ით ადრე დათრიგერდეს
+        threshold: 0, // ოდნავ გამოჩნდება დაიწყოს
+      }
     );
 
+    // დამკვირვებელო დააკვირდი Ref-ში არსებულ div-ს
+    observer.observe(loadMoreRef.current);
 
-
-    
-
-    observer.observe(loadMoreRef.current)
-
-
-    return () =>  observer.disconnect()
+    // cleanup - oberver-ის გათიშვა
+    return () => observer.disconnect();
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   return (
-    <div className="max-w-150 mx-auto">
-      {data?.pages.map((page, idx) => (
-        <div key={idx}>
+    <div className="max-w-[600px] mx-auto">
+      {/* Data */}
+      {data?.pages.map((page, pageIndex) => (
+        <div key={pageIndex}>
           {page.map((post) => (
-            <div className="border-2 p-4 mb-3" key={post.id}>
+            <div key={post.id} className="border-2 p-4 mb-3">
               <h3>{post.title}</h3>
               <p>{post.body}</p>
             </div>
           ))}
         </div>
       ))}
+
       {isFetchingNextPage && <Loader />}
+
+      {/* Target div */}
       <div ref={loadMoreRef} className="h-px" />
     </div>
   );
